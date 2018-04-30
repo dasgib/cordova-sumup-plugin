@@ -195,6 +195,11 @@ public class Sumup extends CordovaPlugin {
       return true;
     }
 
+    if(action.equals("prepareForCheckout")) {
+      SumUpAPI.prepareForCheckout();
+      return true;
+    }
+
     return false;
   }
 

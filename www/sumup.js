@@ -14,6 +14,10 @@ Sumup.prototype.payWithToken = function (success, failure, amount, currencycode,
   cordova.exec(success, failure, 'Sumup', 'payWithToken', [amount, currencycode, email, tel, token]);
 };
 
+Sumup.prototype.prepareForCheckout = function (success, failure) {
+  cordova.exec(success, failure, 'Sumup', 'prepareForCheckout', []);
+};
+
 Sumup.prototype.login = function (success, failure) {
   cordova.exec(success, failure, 'Sumup', 'login', []);
 };
