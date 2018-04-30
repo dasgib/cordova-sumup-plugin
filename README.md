@@ -11,7 +11,7 @@ Pull requests are welcome to integrate IOS !
 <b>Installation</b>
 
 <pre>
-$ cordova plugin add cordova-plugin-sumup --variable SUMUP_API_KEY=YOUR_AFFILIATION_KEY
+$ cordova plugin add https://github.com/dasgib/cordova-sumup-plugin --variable SUMUP_API_KEY=YOUR_AFFILIATION_KEY
 </pre>
 
 You can your affiliation key here : https://me.sumup.com/developers
