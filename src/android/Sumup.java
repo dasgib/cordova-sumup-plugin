@@ -16,6 +16,7 @@ import com.sumup.merchant.api.SumUpAPI;
 import com.sumup.merchant.api.SumUpPayment;
 import com.sumup.merchant.api.SumUpState;
 import com.sumup.merchant.api.SumUpLogin;
+import com.sumup.merchant.Models.TransactionInfo;
 
 import java.util.UUID;
 
@@ -240,6 +241,19 @@ public class Sumup extends CordovaPlugin {
           res.put("code", code);
           res.put("message", message);
           res.put("txcode", txcode);
+
+          // get additional transaction details
+          TransactionInfo info = (TransactionInfo) extras.get(SumUpAPI.Response.TX_INFO);
+          res.put("txid", info.getForeignTransactionId());
+          res.put("amount", info.getAmount());
+          res.put("vat_amount", info.getVatAmount());
+          res.put("tip_amount", info.getTipAmount());
+          res.put("currency", info.getCurrency());
+          res.put("status", info.getStatus());
+          res.put("payment_type", info.getPaymentType());
+          res.put("card_type", info.getCard().getType());
+          res.put("card_last4digits", info.getCard().getLast4Digits());
+
         } catch (Exception e) {}
 
         PluginResult result = new PluginResult(PluginResult.Status.OK, res);
