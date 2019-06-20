@@ -8,6 +8,7 @@ import org.apache.cordova.CordovaWebView;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,159 +18,59 @@ import com.sumup.merchant.api.SumUpPayment;
 import com.sumup.merchant.api.SumUpState;
 import com.sumup.merchant.api.SumUpLogin;
 import com.sumup.merchant.Models.TransactionInfo;
+import com.sumup.merchant.Models.Merchant;
 
 import java.util.UUID;
+import java.math.BigDecimal;
 
 public class Sumup extends CordovaPlugin {
+  private static final String TAG = "SumUp";
 
   private static final int REQUEST_CODE_LOGIN = 1;
   private static final int REQUEST_CODE_PAYMENT = 2;
-  private static final int REQUEST_CODE_PAYMENT_SETTINGS = 3;
-  private static final int REQUEST_CODE_LOGIN_SETTING = 4;
+  private static final int REQUEST_CODE_SETTINGS = 3;
 
   private CallbackContext callback = null;
+  private String affiliateKey = null;
 
   @Override
   public void initialize(CordovaInterface cordova, CordovaWebView webView) {
       super.initialize(cordova, webView);
+
       SumUpState.init(cordova.getActivity());
+
+      affiliateKey = this.cordova.getActivity().getString(cordova.getActivity().getResources().getIdentifier("SUMUP_API_KEY", "string", cordova.getActivity().getPackageName()));
+
   }
 
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
-
-    String affiliateKey = this.cordova.getActivity().getString(cordova.getActivity().getResources().getIdentifier("SUMUP_API_KEY", "string", cordova.getActivity().getPackageName()));
-
     if (action.equals("pay")) {
+      BigDecimal amount = null;
 
-      /************ Parse args ******************/
-      Double amount = null;
       try {
-        amount = Double.parseDouble(args.get(0).toString());
+        amount = new BigDecimal(args.getString(0));
       } catch (Exception e) {
         callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Can't parse amount"));
-        return false;
       }
 
       SumUpPayment.Currency currency = null;
       try {
-        currency = SumUpPayment.Currency.valueOf(args.get(1).toString());
+        currency = SumUpPayment.Currency.valueOf(args.getString(1));
       } catch (Exception e) {
         callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Can't parse currency"));
-        return false;
       }
-
-      String email = "";
-      try {
-        email = args.get(2).toString();
-      } catch (Exception e) {
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Can't parse email"));
-        return false;
-      }
-
-      String tel = "";
-      try {
-        tel = args.get(3).toString();
-      } catch (Exception e) {
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Can't parse tel"));
-        return false;
-      }
-
-      SumUpPayment payment = SumUpPayment.builder()
-      // mandatory parameters
-      // Your affiliate key is bound to the applicationID entered in the SumUp dashboard at https://me.sumup.com/integration-tools
-      .affiliateKey(affiliateKey)
-      .productAmount(amount)
-      .currency(currency)
-      // optional: add details
-      .receiptEmail(email)
-      .receiptSMS(tel)
-      //.productTitle("Taxi Ride")
-      // optional: Add metadata
-      //.addAdditionalInfo("AccountId", "taxi0334")
-      //.addAdditionalInfo("From", "Paris")
-      //.addAdditionalInfo("To", "Berlin")
-      // optional: foreign transaction ID, must be unique!
-      .foreignTransactionId(UUID.randomUUID().toString()) // can not exceed 128 chars
-      .skipSuccessScreen()
-      .build();
 
       callback = callbackContext;
       cordova.setActivityResultCallback(this);
 
-      SumUpAPI.openPaymentActivity(this.cordova.getActivity(), payment, REQUEST_CODE_PAYMENT);
+      SumUpPayment.Builder payment = SumUpPayment.builder(amount, currency).skipSuccessScreen();
+      SumUpAPI.checkout(this.cordova.getActivity(), payment.build(), REQUEST_CODE_PAYMENT);
+
       return true;
     }
 
-    if (action.equals("payWithToken")) {
-
-      /************ Parse args ******************/
-      Double amount = null;
-      try {
-        amount = Double.parseDouble(args.get(0).toString());
-      } catch (Exception e) {
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Can't parse amount"));
-        return false;
-      }
-
-      SumUpPayment.Currency currency = null;
-      try {
-        currency = SumUpPayment.Currency.valueOf(args.get(1).toString());
-      } catch (Exception e) {
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Can't parse currency"));
-        return false;
-      }
-
-      String email = "";
-      try {
-        email = args.get(2).toString();
-      } catch (Exception e) {
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Can't parse email"));
-        return false;
-      }
-
-      String tel = "";
-      try {
-        tel = args.get(3).toString();
-      } catch (Exception e) {
-        callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, "Can't parse tel"));
-        return false;
-      }
-
-      String token = "";
-      try {
-        token = args.get(4).toString();
-      } catch (Exception e) {
-      }
-
-      SumUpPayment payment = SumUpPayment.builder()
-      // mandatory parameters
-      // Your affiliate key is bound to the applicationID entered in the SumUp dashboard at https://me.sumup.com/integration-tools
-      .affiliateKey(affiliateKey)
-      .accessToken(token)
-      .productAmount(amount)
-      .currency(currency)
-      // optional: add details
-      .receiptEmail(email)
-      .receiptSMS(tel)
-      //.productTitle("Taxi Ride")
-      // optional: Add metadata
-      //.addAdditionalInfo("AccountId", "taxi0334")
-      //.addAdditionalInfo("From", "Paris")
-      //.addAdditionalInfo("To", "Berlin")
-      // optional: foreign transaction ID, must be unique!
-      .foreignTransactionId(UUID.randomUUID().toString()) // can not exceed 128 chars
-      .skipSuccessScreen()
-      .build();
-
-      callback = callbackContext;
-      cordova.setActivityResultCallback(this);
-
-      SumUpAPI.openPaymentActivity(this.cordova.getActivity(), payment, REQUEST_CODE_PAYMENT);
-      return true;
-    }
-
-    if(action.equals("login")) {
+    if (action.equals("login")) {
       callback = callbackContext;
       cordova.setActivityResultCallback(this);
 
@@ -178,108 +79,118 @@ public class Sumup extends CordovaPlugin {
       return true;
     }
 
-    if(action.equals("settings")) {
+    if (action.equals("logout")) {
+      SumUpAPI.logout();
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, true));
+      return true;
+    }
+
+    if (action.equals("isLoggedIn")) {
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, SumUpAPI.isLoggedIn()));
+      return true;
+    }
+
+    if (action.equals("settings")) {
       callback = callbackContext;
       cordova.setActivityResultCallback(this);
 
-      SumUpLogin sumUplogin = SumUpLogin.builder(affiliateKey).build();
-      SumUpAPI.openLoginActivity(this.cordova.getActivity(), sumUplogin, REQUEST_CODE_LOGIN_SETTING);
+      SumUpAPI.openPaymentSettingsActivity(this.cordova.getActivity(), REQUEST_CODE_SETTINGS);
       return true;
     }
 
-    if(action.equals("logout")) {
-      this.cordova.getActivity().runOnUiThread(new Runnable() {
-        public void run() {
-          SumUpAPI.logout();
-        }
-      });
-      return true;
-    }
-
-    if(action.equals("prepareForCheckout")) {
+    if (action.equals("prepareForCheckout")) {
       SumUpAPI.prepareForCheckout();
+      callbackContext.sendPluginResult(new PluginResult(PluginResult.Status.OK, true));
       return true;
     }
 
-    return false;
+    return false; // raises "MethodNotFound"
   }
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    // no intent data given: Sumup activity has been cancelled
+    if (data == null) {
+      callback.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, getErrorMessage(requestCode, resultCode, "Action cancelled")));
+      return;
+    }
 
-    if(requestCode == REQUEST_CODE_LOGIN) {
-      Bundle extra = data.getExtras();
-      int code = extra.getInt(SumUpAPI.Response.RESULT_CODE);
-      String message = extra.getString(SumUpAPI.Response.MESSAGE);
+    Bundle extra = data.getExtras();
+    String message = extra.getString(SumUpAPI.Response.MESSAGE);
+    int code = extra.getInt(SumUpAPI.Response.RESULT_CODE);
 
-      JSONObject res = new JSONObject();
+    if (code != SumUpAPI.Response.ResultCode.SUCCESSFUL) {
+      callback.sendPluginResult(new PluginResult(PluginResult.Status.ERROR, getErrorMessage(requestCode, code, message)));
+      return;
+    }
+
+    JSONObject res = new JSONObject();
+
+    try {
+      res.put("code", code);
+      res.put("message", message);
+    } catch (Exception e) {}
+
+    if (requestCode == REQUEST_CODE_LOGIN) {
       try {
-        res.put("code", code);
-        res.put("message", message);
-      } catch (Exception e) {}
-
-      PluginResult result = new PluginResult(PluginResult.Status.OK, res);
-      result.setKeepCallback(true);
-      callback.sendPluginResult(result);
+        Merchant currentMerchant = SumUpAPI.getCurrentMerchant();
+        res.put("merchantCode", currentMerchant.getMerchantCode());
+        res.put("merchantCurrency", currentMerchant.getCurrency().toString());
+      } catch (Exception e) {
+        Log.e(TAG, "Error parsing login result", e);
+      }
     }
 
-    if(requestCode == REQUEST_CODE_PAYMENT) {
-
-        Bundle extras = data.getExtras();
-
-        String code = "";
-        String txcode = "";
-        String message = "";
-        if (extras != null) {
-            message = "" + extras.getString(SumUpAPI.Response.MESSAGE);
-            txcode = "" + extras.getString(SumUpAPI.Response.TX_CODE);
-            code = "" + extras.getInt(SumUpAPI.Response.RESULT_CODE);
-        }
-
-        JSONObject res = new JSONObject();
-        try {
-          res.put("code", code);
-          res.put("message", message);
-          res.put("txcode", txcode);
-
-          // get additional transaction details
-          TransactionInfo info = (TransactionInfo) extras.get(SumUpAPI.Response.TX_INFO);
-          res.put("txid", info.getForeignTransactionId());
-          res.put("amount", info.getAmount());
-          res.put("vat_amount", info.getVatAmount());
-          res.put("tip_amount", info.getTipAmount());
-          res.put("currency", info.getCurrency());
-          res.put("status", info.getStatus());
-          res.put("payment_type", info.getPaymentType());
-          res.put("card_type", info.getCard().getType());
-          res.put("card_last4digits", info.getCard().getLast4Digits());
-
-        } catch (Exception e) {}
-
-        PluginResult result = new PluginResult(PluginResult.Status.OK, res);
-        result.setKeepCallback(true);
-        callback.sendPluginResult(result);
-    }
-
-    if(requestCode == REQUEST_CODE_LOGIN_SETTING) {
-      SumUpAPI.openPaymentSettingsActivity(this.cordova.getActivity(), REQUEST_CODE_PAYMENT_SETTINGS);
-    }
-
-    if(requestCode == REQUEST_CODE_PAYMENT_SETTINGS) {
-      Bundle extra = data.getExtras();
-      int code = extra.getInt(SumUpAPI.Response.RESULT_CODE);
-      String message = extra.getString(SumUpAPI.Response.MESSAGE);
-
-      JSONObject res = new JSONObject();
+    if (requestCode == REQUEST_CODE_PAYMENT) {
       try {
-        res.put("code", code);
-        res.put("message", message);
-      } catch (Exception e) {}
+        res.put("txcode", extra.getString(SumUpAPI.Response.TX_CODE));
 
-      PluginResult result = new PluginResult(PluginResult.Status.OK, res);
-      result.setKeepCallback(true);
-      callback.sendPluginResult(result);
+        // get additional transaction details
+        TransactionInfo info = (TransactionInfo) extra.get(SumUpAPI.Response.TX_INFO);
+
+        res.put("txid", info.getForeignTransactionId());
+        res.put("amount", info.getAmount());
+        res.put("vat_amount", info.getVatAmount());
+        res.put("tip_amount", info.getTipAmount());
+        res.put("currency", info.getCurrency());
+        res.put("status", info.getStatus());
+        res.put("payment_type", info.getPaymentType());
+        res.put("card_type", info.getCard().getType());
+        res.put("card_last4digits", info.getCard().getLast4Digits());
+
+      } catch (Exception e) {
+        Log.e(TAG, "Error parsing payment result", e);
+      }
     }
 
+    PluginResult result = new PluginResult(PluginResult.Status.OK, res);
+    result.setKeepCallback(true);
+    callback.sendPluginResult(result);
+  }
+
+  private String getErrorMessage(int requestCode, int resultCode, String message) {
+    int errClass = 1;
+    int errCode = 0;
+
+    switch (requestCode) {
+      case REQUEST_CODE_PAYMENT:
+        errClass = 2;
+        break;
+      case REQUEST_CODE_SETTINGS:
+        errClass = 3;
+        break;
+      default:
+        errClass = 0;
+    }
+
+    switch (resultCode) {
+      case SumUpAPI.Response.ResultCode.ERROR_ALREADY_LOGGED_IN:
+        errCode = 22;
+        break;
+      default:
+        errCode = resultCode;
+    }
+
+    return String.format("Error %d%02d: %s", errClass, errCode, message);
   }
 }

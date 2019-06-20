@@ -2,7 +2,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
   xmlns:android="http://schemas.android.com/apk/res/android"
   id="cordova-plugin-sumup"
-  version="1.0.1">
+  version="1.3.0">
 
   <engines>
     <engine name="cordova" version=">=3.0.0" />
@@ -23,19 +23,31 @@
 
   <platform name="android">
     <preference name="SUMUP_API_KEY" />
+
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="Sumup">
         <param name="android-package" value="com.sumup.cordova.plugins.Sumup" />
         <param name="onload" value="true" />
       </feature>
     </config-file>
+
     <config-file target="./res/values/strings.xml" parent="/resources">
       <string name="SUMUP_API_KEY">$SUMUP_API_KEY</string>
     </config-file>
-    <resource-file src="src/android/sdksumup/merchant-sdk-2.3.0.aar" target="libs/merchant-sdk-2.3.0.aar" />
+
+    <!-- Fix sumup resources, so AAPT does not complain -->
+    <resource-file src="src/android/res/values/values.xml" target="res/values/values.xml" />
+    <resource-file src="src/android/res/values-es-rCL/values-es-rCL.xml" target="res/values-es-rCL/values-es-rCL.xml" />
+    <resource-file src="src/android/res/values-pt-rBR/values-pt-rBR.xml" target="res/values-pt-rBR/values-pt-rBR.xml" />
+    <resource-file src="src/android/res/values-sk/values-sk.xml" target="res/values-sk/values-sk.xml" />
+    <resource-file src="src/android/res/values-sl/values-sl.xml" target="res/values-sl/values-sl.xml" />
+
+    <resource-file src="src/android/sdksumup/merchant-sdk-3.1.2.aar" target="libs/merchant-sdk-3.1.2.aar" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
     <source-file src="src/android/Sumup.java" target-dir="src/com/sumup/cordova/plugins" />
     <framework src="src/android/build.gradle" custom="true" type="gradleReference" />
   </platform>
