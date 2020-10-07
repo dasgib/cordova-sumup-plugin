@@ -37,10 +37,10 @@ android {
 dependencies {
     compile 'com.android.support:appcompat-v7:24.2.1'
 
-    compile('com.sumup:merchant-sdk:3.1.2@aar') {
+    compile('com.sumup:merchant-sdk:3.2.2@aar') {
         transitive = true
     }
 
-	   debugCompile project(path: "CordovaLib", configuration: "debug")
-	    releaseCompile project(path: "CordovaLib", configuration: "release")
+	  debugCompile project(path: "CordovaLib", configuration: "debug")
+	  releaseCompile project(path: "CordovaLib", configuration: "release")
 }
